@@ -24,6 +24,9 @@ const userSchema = new Schema(
       enum: ["customer", "admin"],
       default: "customer",
     },
+    otp: {
+      type: Number,
+    },
   },
   { timestamps: true }
 );
