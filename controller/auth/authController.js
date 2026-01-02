@@ -90,3 +90,60 @@ exports.forgotPassword = async (req, res) => {
     message: "Email sent successfully",
   });
 };
+
+exports.verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) {
+    res.status(400).json({
+      message: "Please enter email and otp",
+    });
+  }
+  const userExist = await User.findOne({ userEmail: email });
+  if (!userExist) {
+    return res.status(400).json({
+      message: "Email is not registered",
+    });
+  }
+  if (userExist.otp !== otp) {
+    return res.status(400).json({
+      message: "Invalid otp",
+    });
+  }
+  userExist.otp = undefined;
+  userExist.isOtpVerified = true;
+  await userExist.save();
+  res.status(200).json({
+    message: "Otp verified successfully",
+  });
+};
+
+exports.resetPassword = async (req, res) => {
+  const { email, newPassword, confirmPassword } = req.body;
+  if (!email || !newPassword || !confirmPassword) {
+    return res.status(400).json({
+      message: "Please enter email,new Password and confirm password",
+    });
+  }
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({
+      message: "New password doesnot match confirm Password",
+    });
+  }
+  const userExist = await User.findOne({ userEmail: email });
+  if (!userExist) {
+    return res.status(400).json({
+      message: "User isnot registered with that email",
+    });
+  }
+  if (!userExist.isOtpVerified) {
+    return res.status(403).json({
+      message: "You cannot perform this action",
+    });
+  }
+  userExist.userPassword = bcrypt.hashSync(newPassword, 10);
+  userExist.isOtpVerified = false;
+  await userExist.save();
+  res.status(200).json({
+    message: "Password changed successfully",
+  });
+};
